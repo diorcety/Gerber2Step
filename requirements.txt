@@ -1,0 +1,4 @@
+gerbonara
+cadquery
+numpy
+svgpathtools

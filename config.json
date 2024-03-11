@@ -1,0 +1,28 @@
+{
+  "mapping": {
+    "top copper": "{board_name}_Copper_Signal_Top.gbr",
+    "top mask": "{board_name}_Soldermask_Top.gbr",
+    "top silk": "{board_name}_Legend_Top.gbr",
+    "top paste": "{board_name}_Paste_Top.gbr",
+    "bottom copper": "{board_name}_Copper_Signal_Bot.gbr",
+    "bottom mask": "{board_name}_Soldermask_Bot.gbr",
+    "bottom silk": "{board_name}_Legend_Bot.gbr",
+    "bottom paste": "{board_name}_Paste_Bot.gbr",
+    "inner copper": "{board_name}_In{layer_number}.Cu.gbr",
+    "mechanical outline": "{board_name}_Profile.gbr",
+    "drill plated": "{board_name}_PTH_Drill.gbr",
+    "drill nonplated": "{board_name}_NPTH_Drill.gbr"
+  },
+  "pcb": {
+    "thickness": 1.6
+  },
+  "copper": {
+    "thickness": 0.0348
+  },
+  "via": {
+    "subdiv": 4,
+    "plating": {
+      "thickness": 0.018
+    }
+  }
+}
