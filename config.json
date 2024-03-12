@@ -14,10 +14,20 @@
     "drill nonplated": "{board_name}_NPTH_Drill.gbr"
   },
   "pcb": {
-    "thickness": 1.6
+    "thickness": 1.57,
+    "color": [
+      9,
+      77,
+      28
+    ]
   },
   "copper": {
-    "thickness": 0.0348
+    "thickness": 0.0348,
+    "color": [
+      184,
+      115,
+      51
+    ]
   },
   "via": {
     "subdiv": 4,

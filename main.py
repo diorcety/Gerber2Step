@@ -85,7 +85,7 @@ def _to_line_path(path, sub_div=100):
     if sub_div < 1:
         return path
     points = _divide_path(path, sub_div)
-    ret = svgpathtools.Path(*[svgpathtools.Line(points[i], points[i+1]) for i in range(-1, len(points)-1)])
+    ret = svgpathtools.Path(*[svgpathtools.Line(points[i], points[i + 1]) for i in range(-1, len(points) - 1)])
     ret.closed = True
     return ret
 
@@ -178,7 +178,6 @@ def _close_path_sanitizing(path: Union[svgpathtools.Path, Tuple]):
         length = len(path)
 
     path.closed = True
-    path = svgpathtools.Path(*path)
     return path.reversed() if _is_path_clockwise(path) else path
 
 
@@ -501,7 +500,8 @@ def _create_copper(configuration, svgs, offset, npth, pth):
             sketch = sketch.face(group, mode=mode)
 
     with benchmark("Union holes"):
-        union_holes = _paths_union([path for path, _ in npth + pth])
+        holes = npth + pth
+        union_holes = _paths_union([path for path, _ in holes])
         sketch = sketch.face(union_holes, mode="s")
 
     with benchmark("Clean"):
@@ -536,11 +536,18 @@ def _create_via(configuration, pth):
     return body_o
 
 
+def _get_color(color):
+    return cq.Color(*[c / 255 for c in color])
+
+
 def app(args):
     with open(args.configuration) as configuration_file:
         configuration = json.load(configuration_file, object_hook=lambda dct: types.SimpleNamespace(**dct))
 
     gbr_files = _get_files(args)
+
+    copper_color = _get_color(configuration.copper.color)
+    pcb_color = _get_color(configuration.pcb.color)
 
     with benchmark("Load gerber files"):
         stack = gerbonara.LayerStack.from_files(gbr_files, autoguess=False, **_get_args(gbr_files, configuration))
@@ -553,28 +560,30 @@ def app(args):
         svgs['bottom copper'] = [_close_path_sanitizing(_to_svg(o, arc_poly=True)) for o in
                                  stack.bottom_side['bottom copper'].objects]
         svgs['drill_npth'] = [_close_path_sanitizing(_to_svg(o, arc_poly=True)) for o in stack.drill_npth.objects]
-        svgs['drill_pth'] = [_to_line_path(_close_path_sanitizing(_to_svg(o, arc_poly=True)), configuration.via.subdiv) for o in stack.drill_pth.objects]
+        svgs['drill_pth'] = [_to_line_path(_close_path_sanitizing(_to_svg(o, arc_poly=True)), configuration.via.subdiv)
+                             for o in stack.drill_pth.objects]
 
     elements = {}
     attributes = {}
 
     with benchmark("Create board"):
         elements['board'] = _create_board(configuration, svgs['outline'], svgs['drill_npth'], svgs['drill_pth'])
-        attributes['board'] = dict(color=cq.Color(9 / 255, 77 / 255, 28 / 255))
+        attributes['board'] = dict(color=pcb_color)
 
     with benchmark("Top copper"):
         elements['top_copper'] = _create_copper(configuration, svgs['top_copper'], configuration.pcb.thickness,
                                                 svgs['drill_npth'], svgs['drill_pth'])
-        attributes['top_copper'] = dict(color=cq.Color(184 / 255, 115 / 255, 51 / 255))
+        attributes['top_copper'] = dict(color=copper_color)
 
     with benchmark("Bottom copper"):
         elements['bottom_copper'] = _create_copper(configuration, svgs['bottom copper'],
                                                    -configuration.copper.thickness, svgs['drill_npth'],
                                                    svgs['drill_pth'])
-        attributes['bottom_copper'] = dict(color=cq.Color(184 / 255, 115 / 255, 51 / 255))
+        attributes['bottom_copper'] = dict(color=copper_color)
 
     with benchmark("Vias"):
         elements['vias'] = _create_via(configuration, svgs['drill_pth'])
+        attributes['vias'] = dict(color=copper_color)
 
     assembly = cq.Assembly(name="PCB")
     for name, o in elements.items():
